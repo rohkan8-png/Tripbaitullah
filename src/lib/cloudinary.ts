@@ -20,6 +20,11 @@ export async function uploadToCloudinary(
   folder: string
 ) {
   try {
+    console.log('Starting upload to Cloudinary...')
+    console.log('Folder:', folder)
+    console.log('File type:', Buffer.isBuffer(file) ? 'Buffer' : 'String')
+    console.log('File size:', Buffer.isBuffer(file) ? file.length : file.length)
+
     // Convert buffer to base64 data URI
     const base64String = Buffer.isBuffer(file) 
       ? file.toString('base64')
@@ -27,6 +32,7 @@ export async function uploadToCloudinary(
     
     const dataURI = `data:image/jpeg;base64,${base64String}`
 
+    console.log('Uploading to Cloudinary...')
     const result = await cloudinary.uploader.upload(dataURI, {
       folder: `travel_app/${folder}`,
       resource_type: 'auto',
@@ -37,6 +43,8 @@ export async function uploadToCloudinary(
       ]
     })
 
+    console.log('Upload successful:', result.secure_url)
+
     return {
       success: true,
       url: result.secure_url,
@@ -44,6 +52,7 @@ export async function uploadToCloudinary(
     }
   } catch (error) {
     console.error('Cloudinary upload error:', error)
+    console.error('Error details:', JSON.stringify(error, null, 2))
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Upload failed'
