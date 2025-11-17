@@ -6,7 +6,7 @@ import { TravelCard } from '@/components/travel-card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ArrowLeft, Search } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 interface Package {
@@ -31,7 +31,7 @@ interface Travel {
   logo?: string
 }
 
-export default function SearchPage() {
+function SearchContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const queryParam = searchParams.get('q') || ''
@@ -213,5 +213,19 @@ export default function SearchPage() {
         </main>
       </div>
     </MobileLayout>
+  )
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={
+      <MobileLayout hideBottomNav>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <p className="text-muted-foreground">Memuat...</p>
+        </div>
+      </MobileLayout>
+    }>
+      <SearchContent />
+    </Suspense>
   )
 }
