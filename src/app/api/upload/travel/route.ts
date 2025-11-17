@@ -1,69 +1,62 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
+import { uploadToCloudinary } from '@/lib/cloudinary'
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const type = formData.get('type') as string // 'logo' or 'gallery'
+    const type = formData.get('type') as string // 'logo' or 'cover'
     
     if (!file) {
-      return NextResponse.json(
-        { success: false, error: 'No file uploaded' },
-        { status: 400 }
-      )
+      return NextResponse.json({
+        success: false,
+        error: 'No file uploaded'
+      }, { status: 400 })
     }
 
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid file type. Only JPG, PNG, and WebP are allowed' },
-        { status: 400 }
-      )
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid file type'
+      }, { status: 400 })
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json(
-        { success: false, error: 'File size too large. Maximum 5MB' },
-        { status: 400 }
-      )
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      return NextResponse.json({
+        success: false,
+        error: 'File too large. Max 10MB'
+      }, { status: 400 })
     }
 
+    // Convert to buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads', 'travels')
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true })
+    // Upload to Cloudinary with appropriate folder
+    const folder = type === 'cover' ? 'travel_covers' : 'travel_logos'
+    const result = await uploadToCloudinary(buffer, folder)
+
+    if (!result.success) {
+      return NextResponse.json({
+        success: false,
+        error: result.error
+      }, { status: 500 })
     }
-
-    // Generate unique filename
-    const timestamp = Date.now()
-    const extension = file.name.split('.').pop()
-    const prefix = type === 'logo' ? 'logo' : type === 'cover' ? 'cover' : 'gallery'
-    const filename = `${prefix}-${timestamp}.${extension}`
-    const filepath = join(uploadsDir, filename)
-
-    // Write file
-    await writeFile(filepath, buffer)
-
-    // Return public URL
-    const publicUrl = `/uploads/travels/${filename}`
 
     return NextResponse.json({
       success: true,
-      url: publicUrl
+      url: result.url,
+      publicId: result.publicId
     })
   } catch (error) {
     console.error('Error uploading travel image:', error)
-    return NextResponse.json(
-      { success: false, error: 'Failed to upload image' },
-      { status: 500 }
-    )
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to upload image'
+    }, { status: 500 })
   }
 }

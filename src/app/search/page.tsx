@@ -35,7 +35,7 @@ function SearchContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const queryParam = searchParams.get('q') || ''
-  
+
   const [packages, setPackages] = useState<Package[]>([])
   const [travels, setTravels] = useState<Travel[]>([])
   const [loading, setLoading] = useState(true)
@@ -103,23 +103,23 @@ function SearchContent() {
     }
   }
 
-  const filteredPackages = searchQuery.trim() 
-    ? packages.filter(pkg => 
-        pkg.packageName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        pkg.travelName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        pkg.departureCity?.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+  const filteredPackages = searchQuery.trim()
+    ? packages.filter(pkg =>
+      pkg.packageName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      pkg.travelName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      pkg.departureCity?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
     : []
 
   const filteredTravels = searchQuery.trim()
     ? travels.filter((travel: any) => {
-        const searchLower = searchQuery.toLowerCase().replace('@', '') // Remove @ if present
-        return (
-          travel.name?.toLowerCase().includes(searchLower) ||
-          travel.username?.toLowerCase().includes(searchLower) ||
-          travel.address?.toLowerCase().includes(searchLower)
-        )
-      })
+      const searchLower = searchQuery.toLowerCase().replace('@', '') // Remove @ if present
+      return (
+        travel.name?.toLowerCase().includes(searchLower) ||
+        travel.username?.toLowerCase().includes(searchLower) ||
+        travel.address?.toLowerCase().includes(searchLower)
+      )
+    })
     : []
 
   return (
@@ -134,7 +134,7 @@ function SearchContent() {
               </Button>
               <h1 className="text-lg font-bold">Pencarian</h1>
             </div>
-            
+
             {/* Search Input */}
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -148,8 +148,8 @@ function SearchContent() {
                   autoFocus
                 />
               </div>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setSearchQuery('')}
               >
                 Batal

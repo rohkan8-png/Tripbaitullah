@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
+import { uploadToCloudinary } from '@/lib/cloudinary'
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,43 +17,38 @@ export async function POST(request: NextRequest) {
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/svg+xml']
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid file type. Only JPG, PNG, WebP, and SVG are allowed' },
+        { success: false, error: 'Invalid file type' },
         { status: 400 }
       )
     }
 
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024
+    if (file.size > maxSize) {
       return NextResponse.json(
-        { success: false, error: 'File size too large. Maximum 2MB' },
+        { success: false, error: 'File too large. Max 5MB' },
         { status: 400 }
       )
     }
 
+    // Convert to buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads', 'logo')
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true })
+    // Upload to Cloudinary
+    const result = await uploadToCloudinary(buffer, 'logos')
+
+    if (!result.success) {
+      return NextResponse.json(
+        { success: false, error: result.error },
+        { status: 500 }
+      )
     }
-
-    // Generate unique filename
-    const timestamp = Date.now()
-    const extension = file.name.split('.').pop()
-    const filename = `logo-${timestamp}.${extension}`
-    const filepath = join(uploadsDir, filename)
-
-    // Write file
-    await writeFile(filepath, buffer)
-
-    // Return public URL
-    const publicUrl = `/uploads/logo/${filename}`
 
     return NextResponse.json({
       success: true,
-      url: publicUrl
+      url: result.url,
+      publicId: result.publicId
     })
   } catch (error) {
     console.error('Error uploading logo:', error)

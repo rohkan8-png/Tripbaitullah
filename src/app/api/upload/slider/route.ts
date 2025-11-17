@@ -1,16 +1,15 @@
-import { NextResponse } from 'next/server'
-import { writeFile, mkdir } from 'fs/promises'
-import path from 'path'
+import { NextRequest, NextResponse } from 'next/server'
+import { uploadToCloudinary } from '@/lib/cloudinary'
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
-
+    
     if (!file) {
       return NextResponse.json({
         success: false,
-        error: 'No file uploaded'
+        message: 'No file uploaded'
       }, { status: 400 })
     }
 
@@ -19,51 +18,46 @@ export async function POST(request: Request) {
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json({
         success: false,
-        error: 'Invalid file type. Only JPG, PNG, and WebP are allowed'
+        message: 'Invalid file type. Only JPEG, PNG, and WebP allowed.'
       }, { status: 400 })
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024
+    if (file.size > maxSize) {
       return NextResponse.json({
         success: false,
-        error: 'File size too large. Maximum 5MB'
+        message: 'File too large. Maximum 10MB.'
       }, { status: 400 })
     }
 
+    // Convert to buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Create unique filename
-    const timestamp = Date.now()
-    const originalName = file.name.replace(/\s+/g, '-')
-    const filename = `slider-${timestamp}-${originalName}`
+    // Upload to Cloudinary
+    const result = await uploadToCloudinary(buffer, 'sliders')
 
-    // Ensure upload directory exists
-    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'sliders')
-    try {
-      await mkdir(uploadDir, { recursive: true })
-    } catch (error) {
-      // Directory might already exist
+    if (!result.success) {
+      return NextResponse.json({
+        success: false,
+        message: 'Failed to upload to cloud storage',
+        error: result.error
+      }, { status: 500 })
     }
-
-    // Save file
-    const filepath = path.join(uploadDir, filename)
-    await writeFile(filepath, buffer)
-
-    // Return public URL
-    const url = `/uploads/sliders/${filename}`
 
     return NextResponse.json({
       success: true,
-      url,
-      message: 'File uploaded successfully'
+      message: 'File uploaded successfully',
+      url: result.url,
+      publicId: result.publicId
     })
   } catch (error) {
     console.error('Upload error:', error)
     return NextResponse.json({
       success: false,
-      error: 'Failed to upload file'
+      message: 'Failed to upload file',
+      error: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
 }
