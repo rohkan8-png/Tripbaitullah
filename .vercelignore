@@ -1,0 +1,11 @@
+# Ignore files for Vercel deployment
+.git
+.gitignore
+README.md
+DEPLOYMENT.md
+MIGRATION_GUIDE.md
+GITHUB_VERCEL_SETUP.md
+scripts/
+prisma/db/
+*.db
+*.db-journal
