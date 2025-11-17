@@ -20,18 +20,22 @@ export async function uploadToCloudinary(
   folder: string
 ) {
   try {
-    const result = await cloudinary.uploader.upload(
-      `data:image/jpeg;base64,${file.toString('base64')}`,
-      {
-        folder: `travel_app/${folder}`,
-        resource_type: 'auto',
-        transformation: [
-          { width: 1200, height: 1200, crop: 'limit' },
-          { quality: 'auto' },
-          { fetch_format: 'auto' }
-        ]
-      }
-    )
+    // Convert buffer to base64 data URI
+    const base64String = Buffer.isBuffer(file) 
+      ? file.toString('base64')
+      : file
+    
+    const dataURI = `data:image/jpeg;base64,${base64String}`
+
+    const result = await cloudinary.uploader.upload(dataURI, {
+      folder: `travel_app/${folder}`,
+      resource_type: 'auto',
+      transformation: [
+        { width: 1200, height: 1200, crop: 'limit' },
+        { quality: 'auto' },
+        { fetch_format: 'auto' }
+      ]
+    })
 
     return {
       success: true,
