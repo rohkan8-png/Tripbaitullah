@@ -33,6 +33,8 @@ export async function uploadToCloudinary(
     const dataURI = `data:image/jpeg;base64,${base64String}`
 
     console.log('Uploading to Cloudinary...')
+    
+    // Upload without upload_preset (signed upload)
     const result = await cloudinary.uploader.upload(dataURI, {
       folder: `travel_app/${folder}`,
       resource_type: 'auto',
@@ -41,6 +43,7 @@ export async function uploadToCloudinary(
         { quality: 'auto' },
         { fetch_format: 'auto' }
       ]
+      // Don't use upload_preset for signed uploads
     })
 
     console.log('Upload successful:', result.secure_url)
